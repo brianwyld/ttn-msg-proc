@@ -1,0 +1,20 @@
+FROM python:3.9-slim-buster
+
+COPY ./src/requirements.txt /tmp/requirements.txt
+
+RUN apt-get update && apt-get -y upgrade \
+    && rm -rf /var/cache/apt/archives \
+    && pip3 install -r /tmp/requirements.txt
+
+ENV MQTT_URI=none
+ENV INFLUXDB_ADDRESS=none
+ENV INFLUXDB_USER=none
+ENV INFLUXDB_PASSWORD=none
+
+RUN mkdir -p /var/iotdata/{logs,config,apps,data}
+
+COPY ./src /var/iotdata/apps
+
+WORKDIR /var/iotdata/apps
+
+CMD ["/usr/local/bin/python3", "/var/iotdata/apps/ttn_mqtt_influxdb.py"]

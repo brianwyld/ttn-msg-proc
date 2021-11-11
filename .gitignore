@@ -1,0 +1,16 @@
+built
+other
+resources/imgs
+.vscode
+.micropy
+*.zip
+*.tar
+*.gz
+micropy.json
+pyrightconfig.json
+requirements.txt
+dev-requirements.txt
+lastUpload*
+dvd
+sdcard
+__pycache__

@@ -1,0 +1,99 @@
+version: "1.0"
+# run this in server command line
+# > docker-compose -f docker-compose.yml --env-file <specific run env vars like MAIN_USER etc> build
+# > docker-compose -f docker-compose.yml --env-file <specific run env vars like MAIN_USER etc> up --remove-orphans -d
+# NOTE : MUST explicitly set to localhost (127.0.0.1) the translated ports for all services that should NOT be accessible outside the firewall
+# as Docker added 'allow' iptables rules for such ports on 0.0.0.0.... bypassing any other iptables/ufw rules....
+# This also means that it is not neccessary to add explicit ufw rules for ports exposed by the docker containers such as 80, 443, 8883 etc...
+
+services:
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    restart: always
+    networks:
+      - backend
+    ports:
+      - 127.0.0.1:8086:8086
+    volumes:
+      - influxdb:/var/lib/influxdb
+
+  ttn-msgproc-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.msgproc
+    container_name: ttn-msgproc
+    ports:
+    networks:
+      - frontend
+      - backend
+    links:
+      - influxdb
+    restart: always
+    environment:
+      MQTT_USER : smarthouse-22rdk-29600
+      MQTT_PASS : NNSXS.GIXHBFWDXVGQMEQMJ7FTTUBEVC5LFYXI55SWPVI.V7AXSCYTGVIM5MTU6BZGRXHD6YWQ7VGFXK3BJCD2ZTOM5QDZ5SSQ
+      
+  grafana:
+    image: grafana:latest
+    container_name: grafana
+    restart: always
+    depends_on:
+      - influxdb
+    ports:
+      - 127.0.0.1:9000:5000
+    networks:
+      - backend
+    environment:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      - "traefik.http.routers.ife_server.rule=Host(`${PLATFORM_API_HOST}`) && PathPrefix(`/ui/`)"
+      - "traefik.http.routers.ife_server.tls=true"
+      - "traefik.http.routers.ife_server.tls.certresolver=letsencrypt"
+
+  traefik:
+    image: traefik:v2.4.14
+    restart: always
+    container_name: traefik
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8883:8883"
+      #- "127.0.0.1:8080:8080"
+    networks:
+      - frontend
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --log.level=DEBUG
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=contact@infrafon.club
+      - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --entrypoints.webinsecure.address=:80
+      - --entrypoints.webinsecure.http.redirections.entryPoint.to=websecure
+      - --entrypoints.webinsecure.http.redirections.entryPoint.scheme=https
+      - --entrypoints.webinsecure.http.redirections.entrypoint.permanent=true
+      - --entrypoints.mqtt.address=:8883
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/acme.json:/acme.json
+
+volumes:
+  influxdb:
+    external: false
+    name: influxdb
+
+networks:
+  #Dedicated network for traefik communication
+  frontend:
+    name: frontend
+    external: false
+    driver: bridge
+  #Dedicated network to communicate with database
+  backend:
+    name: backend
+    external: false
+    driver: bridge
+
