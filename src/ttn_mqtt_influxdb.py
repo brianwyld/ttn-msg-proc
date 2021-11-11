@@ -37,7 +37,7 @@ class TTNConnector:
         self._mqtt_client = None
         # can pass app as None to create test instance
         if app is not None:
-            self._influxdb_client = TTNConnector._init_influxdb_database(os.environ.get('INFLUXDB_ADDRESS', '127.0.0.1'), 
+            self._influxdb_client = TTNConnector._init_influxdb_database(os.environ.get('INFLUXDB_ADDRESS', 'localhost'), 
                                         os.environ.get('INFLUXDB_USER', 'msgproc'), os.environ.get('INFLUXDB_PASSWORD', 'msgproc01'), 
                                         app)
             self._mqtt_client = mqtt.Client(app)
