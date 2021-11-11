@@ -1,5 +1,3 @@
 #!/bin/sh
 
-sudo docker-compose -f docker-compose.yml up --env-file ./.env --build --remove-orphans -d
-
-
+sudo docker-compose --env-file ./.env -f docker-compose.yml up --build --remove-orphans -d

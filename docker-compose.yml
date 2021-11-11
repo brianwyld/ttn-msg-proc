@@ -30,6 +30,12 @@ services:
       - influxdb
     restart: always
     environment:
+      INFLUXDB_ADDRESS
+      INFLUXDB_USER
+      INFLUXDB_PASSWORD
+      TTN_TENANT
+      MQTT_ADDRESS
+      MQTT_PORT
       MQTT_USER : smarthouse-22rdk-29600
       MQTT_PASS : NNSXS.GIXHBFWDXVGQMEQMJ7FTTUBEVC5LFYXI55SWPVI.V7AXSCYTGVIM5MTU6BZGRXHD6YWQ7VGFXK3BJCD2ZTOM5QDZ5SSQ
 
@@ -66,7 +72,7 @@ services:
       - --providers.docker
       - --log.level=DEBUG
       - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.letsencrypt.acme.email=contact@infrafon.club
+      - --certificatesresolvers.letsencrypt.acme.email=contact@wt-consulting.fr
       - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
       - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
       - --entrypoints.webinsecure.address=:80
