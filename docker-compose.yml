@@ -52,7 +52,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"
-      - "traefik.http.routers.ife_server.rule=Host(`${PLATFORM_API_HOST}`)
+      - "traefik.http.routers.ife_server.rule=Host(`${PLATFORM_API_HOST}`)"
       - "traefik.http.routers.ife_server.tls=true"
       - "traefik.http.routers.ife_server.tls.certresolver=letsencrypt"
 

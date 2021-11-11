@@ -44,7 +44,7 @@ class TTNConnector:
             self._mqtt_client.username_pw_set(self._ttnusername, apikey)
             self._mqtt_client.on_connect = self.on_connect
             self._mqtt_client.on_message = self.on_message
-            self._mqtt_client.connect(os.environ.get('MQTT_ADDRESS', 'eu1.cloud.thethings.network'), os.environ.get('MQTT_PORT', 1883))
+            self._mqtt_client.connect(os.environ.get('MQTT_ADDRESS', 'eu1.cloud.thethings.network'), int(os.environ.get('MQTT_PORT', 1883)))
 
     def loop_forever(self):
         self._mqtt_client.loop_forever()
