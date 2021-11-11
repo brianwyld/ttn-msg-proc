@@ -6,7 +6,11 @@ RUN apt-get update && apt-get -y upgrade \
     && rm -rf /var/cache/apt/archives \
     && pip3 install -r /tmp/requirements.txt
 
-ENV MQTT_URI=none
+ENV MQTT_ADDRESS=none
+ENV MQTT_PORT=none
+ENV MQTT_USER=none
+ENV MQTT_PASS=none
+ENV TTN_TENANT=none
 ENV INFLUXDB_ADDRESS=none
 ENV INFLUXDB_USER=none
 ENV INFLUXDB_PASSWORD=none
