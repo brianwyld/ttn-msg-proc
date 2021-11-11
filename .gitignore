@@ -8,8 +8,6 @@ resources/imgs
 *.gz
 micropy.json
 pyrightconfig.json
-requirements.txt
-dev-requirements.txt
 lastUpload*
 dvd
 sdcard

@@ -1,4 +1,4 @@
-version: "1.0"
+version: "3.7"
 # run this in server command line
 # > docker-compose -f docker-compose.yml --env-file <specific run env vars like MAIN_USER etc> build
 # > docker-compose -f docker-compose.yml --env-file <specific run env vars like MAIN_USER etc> up --remove-orphans -d
@@ -23,7 +23,6 @@ services:
       context: .
       dockerfile: Dockerfile.msgproc
     container_name: ttn-msgproc
-    ports:
     networks:
       - frontend
       - backend
@@ -33,9 +32,9 @@ services:
     environment:
       MQTT_USER : smarthouse-22rdk-29600
       MQTT_PASS : NNSXS.GIXHBFWDXVGQMEQMJ7FTTUBEVC5LFYXI55SWPVI.V7AXSCYTGVIM5MTU6BZGRXHD6YWQ7VGFXK3BJCD2ZTOM5QDZ5SSQ
-      
+
   grafana:
-    image: grafana:latest
+    image: grafana/grafana:latest
     container_name: grafana
     restart: always
     depends_on:
@@ -44,7 +43,6 @@ services:
       - 127.0.0.1:9000:5000
     networks:
       - backend
-    environment:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=frontend"

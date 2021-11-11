@@ -21,7 +21,7 @@ import logging
 log=logging.getLogger(__name__)
 
 # get environment config from env vars if set else defaults
-INFLUXDB_ADDRESS = os.environ.get('INFLUXDB_ADDRESS', 'localhost')
+INFLUXDB_ADDRESS = os.environ.get('INFLUXDB_ADDRESS', '127.0.0.1')
 INFLUXDB_USER = os.environ.get('INFLUXDB_USER', 'msgproc')
 INFLUXDB_PASSWORD = os.environ.get('INFLUXDB_PASSWORD', 'msgproc01')
 TTN_TENANT = os.environ.get('TTN_TENANT', 'ttn')
@@ -131,9 +131,12 @@ class TTNConnector:
 
     @staticmethod
     def _init_influxdb_database(db_user, db_pass, db_name):
+        log.info("connecting to influxdb on host %s with user %s and pass %s", INFLUXDB_ADDRESS, db_user, db_pass)
         influxdb_client = InfluxDBClient(INFLUXDB_ADDRESS, 8086, db_user, db_pass, None)
         databases = influxdb_client.get_list_database()
+        log.info("checking for db %s", db_name)
         if len(list(filter(lambda x: x['name'] == db_name, databases))) == 0:
+            log.info("no such db %s, trying to create it", db_name)
             influxdb_client.create_database(db_name)
         influxdb_client.switch_database(db_name)
         return influxdb_client
@@ -279,12 +282,14 @@ def main():
     # the 'user' is used as the client id and the database name so that this can be run multiple times to deal with multiple applications
     argd = parseArgs(sys.argv, 0)
     injectEnv(argd, { "MQTT_USER":"-u", "MQTT_PASS":"-p"})
-    if argd.get("-u") is None:
+    u = argd.get("-u")
+    p = argd.get("-p")
+    if u is None:
         exit_usage("missing -u username")
-    if argd.get("-p") is None:
+    if p is None:
         exit_usage("missing -p apikey")
-
-    ttn = TTNConnector(argd.get("-u"), argd.get("-p"))
+    log.info("Starting with user %s and password %s", u, p)
+    ttn = TTNConnector(u, p)
     ttn.loop_forever()
 
 
