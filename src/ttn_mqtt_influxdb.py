@@ -32,16 +32,19 @@ class TTNConnector:
 
     def __init__(self, app:str, apikey:str):
         self._appname = app
+        self._ttnusername = app+"@"+os.environ.get('TTN_TENANT', 'ttn')
         self._influxdb_client = None
         self._mqtt_client = None
         # can pass app as None to create test instance
         if app is not None:
-            self._influxdb_client = TTNConnector._init_influxdb_database(INFLUXDB_USER, INFLUXDB_PASSWORD, app)
+            self._influxdb_client = TTNConnector._init_influxdb_database(os.environ.get('INFLUXDB_ADDRESS', '127.0.0.1'), 
+                                        os.environ.get('INFLUXDB_USER', 'msgproc'), os.environ.get('INFLUXDB_PASSWORD', 'msgproc01'), 
+                                        app)
             self._mqtt_client = mqtt.Client(app)
-            self._mqtt_client.username_pw_set(app+"@"+TTN_TENANT, apikey)
+            self._mqtt_client.username_pw_set(self._ttnusername, apikey)
             self._mqtt_client.on_connect = self.on_connect
             self._mqtt_client.on_message = self.on_message
-            self._mqtt_client.connect(MQTT_ADDRESS, MQTT_PORT)
+            self._mqtt_client.connect(os.environ.get('MQTT_ADDRESS', 'eu1.cloud.thethings.network'), os.environ.get('MQTT_PORT', 1883))
 
     def loop_forever(self):
         self._mqtt_client.loop_forever()
@@ -101,7 +104,7 @@ class TTNConnector:
             self._mqtt_client = None
             return
         # we want uplink messages
-        topic = "v3/{}@{}/devices/+/up".format(self._appname, TTN_TENANT)
+        topic = "v3/{}/devices/+/up".format(self._ttnusername)
         log.info('Connected OK - subscribing to topic %s', topic)
         client.subscribe(topic)
 
@@ -130,9 +133,9 @@ class TTNConnector:
             self._influxdb_client.write_points(json_body)
 
     @staticmethod
-    def _init_influxdb_database(db_user, db_pass, db_name):
-        log.info("connecting to influxdb on host %s with user %s and pass %s", INFLUXDB_ADDRESS, db_user, db_pass)
-        influxdb_client = InfluxDBClient(INFLUXDB_ADDRESS, 8086, db_user, db_pass, None)
+    def _init_influxdb_database(db_host, db_user, db_pass, db_name):
+        log.info("connecting to influxdb on host %s with user %s and pass %s", db_host, db_user, db_pass)
+        influxdb_client = InfluxDBClient(db_host, 8086, db_user, db_pass, None)
         databases = influxdb_client.get_list_database()
         log.info("checking for db %s", db_name)
         if len(list(filter(lambda x: x['name'] == db_name, databases))) == 0:
