@@ -135,7 +135,7 @@ class TTNConnector:
     @staticmethod
     def _init_influxdb_database(db_host, db_user, db_pass, db_name):
         log.info("connecting to influxdb on host %s with user %s and pass %s", db_host, db_user, db_pass)
-        influxdb_client = InfluxDBClient(db_host, 8086, db_user, db_pass, None)
+        influxdb_client = InfluxDBClient(host=db_host, port=8086, username=db_user, password=db_pass, database=None)
         databases = influxdb_client.get_list_database()
         log.info("checking for db %s", db_name)
         if len(list(filter(lambda x: x['name'] == db_name, databases))) == 0:

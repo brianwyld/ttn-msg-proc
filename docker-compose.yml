@@ -14,9 +14,15 @@ services:
     networks:
       - backend
     ports:
-      - 127.0.0.1:8086:8086
+      - 8086:8086
     volumes:
-      - influxdb:/var/lib/influxdb
+      - influxdb2-db:/var/lib/influxdb2
+      - influxdb2-conf:/etc/influxdb2 
+    # 1st run time : create a owner admin user using the web UI eg user 'admin' in the org 'myorg'
+    # then create the processing user/pass (INFLUXDB_USER/INFLUXDB_PASS : 'msgproc' by default) by entering the influxdb docker and using influx CLI (this cannot be done using the UI!!)
+    # sudo docker exec -it <container id> /bin/bash
+    # influx config create --config-name admin --host-url http://localhost:8086 --org <organisation name> --token <owner user api token> --active
+    # influx user create -n msgproc -p msgproc01 -o <org name>
 
   ttn-msgproc-1:
     build:
@@ -55,6 +61,10 @@ services:
       - "traefik.http.routers.ife_server.rule=Host(`${PLATFORM_API_HOST}`)"
       - "traefik.http.routers.ife_server.tls=true"
       - "traefik.http.routers.ife_server.tls.certresolver=letsencrypt"
+    volumes:
+      - grafana-db:/var/lib/grafana
+      - grafana-log:/var/log/grafana
+      - grafana-conf:/etc/grafana
 
   traefik:
     image: traefik:v2.4.14
@@ -85,10 +95,22 @@ services:
       - ./traefik/acme.json:/acme.json
 
 volumes:
-  influxdb:
+  influxdb2-db:
     external: false
-    name: influxdb
-
+    name: influxdb2-db
+  influxdb2-conf:
+    external: false
+    name: influxdb2-conf
+  grafana-db:
+    external: false
+    name: grafana-db
+  grafana-log:
+    external: false
+    name: grafana-log
+  grafana-conf:
+    external: false
+    name: grafana-conf
+    
 networks:
   #Dedicated network for traefik communication
   frontend:
