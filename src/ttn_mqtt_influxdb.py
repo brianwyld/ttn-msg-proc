@@ -133,7 +133,9 @@ class TTNConnector:
             self._influxdb_client.write_points(json_body)
 
     @staticmethod
-    def _init_influxdb_database(db_host, db_user, db_pass, db_name):
+    def _init_influxdb_database(db_host, db_user, db_pass, db_name_raw):
+        allowed_chars='abcdefghijklmnopqrstuvwxyz0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        db_name = ''.join([x if x in allowed_chars else '_' for x in db_name_raw])
         log.info("connecting to influxdb database %s on host %s with user %s and pass %s", db_name, db_host, db_user, db_pass)
         influxdb_client = InfluxDBClient(host=db_host, port=8086, username=db_user, password=db_pass, database=None)
         databases = influxdb_client.get_list_database()
