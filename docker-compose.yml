@@ -8,7 +8,7 @@ version: "3.7"
 
 services:
   influxdb:
-    image: influxdb:latest
+    image: influxdb:v1.8
     container_name: influxdb
     restart: always
     networks:
@@ -16,8 +16,8 @@ services:
     ports:
       - 8086:8086
     volumes:
-      - influxdb2-db:/var/lib/influxdb2
-      - influxdb2-conf:/etc/influxdb2 
+      - influxdb-db:/var/lib/influxdb
+      - influxdb-conf:/etc/influxdb
     # 1st run time : create a owner admin user using the web UI eg user 'admin' in the org 'myorg'
     # then create the processing user/pass (INFLUXDB_USER/INFLUXDB_PASS : 'msgproc' by default) by entering the influxdb docker and using influx CLI (this cannot be done using the UI!!)
     # sudo docker exec -it <container id> /bin/bash
@@ -95,12 +95,12 @@ services:
       - ./traefik/acme.json:/acme.json
 
 volumes:
-  influxdb2-db:
+  influxdb-db:
     external: false
-    name: influxdb2-db
-  influxdb2-conf:
+    name: influxdb-db
+  influxdb-conf:
     external: false
-    name: influxdb2-conf
+    name: influxdb-conf
   grafana-db:
     external: false
     name: grafana-db
