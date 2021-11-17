@@ -248,7 +248,7 @@ class TLV:
             self.decodedValue = 1
         elif(self.key == 15):
             self.decodedKey = 'orient,x,y,z'
-            self.decodedValue = (s8(self.value(0:2)), s8(self.value(2:4)), s8(self.value(4:6)), s8(self.value(6:8)))
+            self.decodedValue = (s8(self.value[0:2]), s8(self.value[2:4]), s8(self.value[4:6]), s8(self.value[6:8]))
 
     def invertValue(self):
         i=len(self.value)
