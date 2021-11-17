@@ -88,7 +88,15 @@ class TTNConnector:
             datas = {}
             for tlv in tlvlist:
                 if(tlv.decodedKey!=''):
-                    datas[tlv.decodedKey] = data.decodedValue
+                    if ',' in tlv.decodedKey:
+                        # if key is of form a,b,c then value is tuple with same number of elements, split them into seperate data elements
+                        tlvks = tlv.decodedKey.split(',')
+                        idx = 0
+                        for tlvk in tlvks:
+                            datas[tlvk] = tlv.decodedValue[idx]
+                            idx += 1
+                    else:
+                        datas[tlv.decodedKey] = tlv.decodedValue
 
         for dk, dv in datas.items():
             # we only put numbers in our DB
@@ -111,8 +119,10 @@ class TTNConnector:
 
     def on_message(self, client, userdata, msg):
         """The callback for when a PUBLISH message is received from the server."""
-        self._parse_mqtt_message_ttn(msg.topic, msg.payload)
-
+        try:
+            self._parse_mqtt_message_ttn(msg.topic, msg.payload)
+        except Exception:
+            log.exception("parsing message on %s", msg.topic)
 
 
     def _send_sensor_data_to_influxdb(self, deveui,measurementKey,value):
@@ -215,18 +225,30 @@ class TLV:
             self.decodedKey = 'temperature'
             temp = self.s16(int(self.invertValue(),16))
             self.decodedValue = temp/100
-        if(self.key == 4):
+        elif(self.key == 4):
             self.decodedKey = 'pressure'
             self.decodedValue = int(self.invertValue(),16)/100
-        if(self.key == 6):
+        elif(self.key == 5):
+            self.decodedKey = 'humidity'
+            self.decodedValue = int(self.invertValue(),16)/100
+        elif(self.key == 6):
             self.decodedKey = 'light'
             self.decodedValue = int(self.invertValue(),16)
-        if(self.key == 7):
+        elif(self.key == 7):
             self.decodedKey = 'battery'
             self.decodedValue = int(self.invertValue(), 16) / 1000
-        if(self.key == 12):
+        elif(self.key == 12):
             self.decodedKey = 'hasMoved'
             self.decodedValue = 1
+        elif(self.key == 13):
+            self.decodedKey = 'hasFall'
+            self.decodedValue = 1
+        elif(self.key == 14):
+            self.decodedKey = 'hasShock'
+            self.decodedValue = 1
+        elif(self.key == 15):
+            self.decodedKey = 'orient,x,y,z'
+            self.decodedValue = (s8(self.value(0:2)), s8(self.value(2:4)), s8(self.value(4:6)), s8(self.value(6:8)))
 
     def invertValue(self):
         i=len(self.value)
@@ -245,6 +267,9 @@ class TLV:
     def s16(self,value):
         return -(value & 0x8000) | (value & 0x7fff)
 
+    def s8(self,hexb_str):
+        value = int(hexb_str, 16)
+        return -(value & 0x80) | (value & 0x7f)
 
 def parseArgs(aa, minArgs:int) -> dict:
     ret = {}
