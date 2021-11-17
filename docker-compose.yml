@@ -34,6 +34,8 @@ services:
     links:
       - influxdb
     restart: always
+    depends_on:
+      - influxdb
     environment:
       - INFLUXDB_ADDRESS
       - INFLUXDB_USER
@@ -54,6 +56,8 @@ services:
     links:
       - influxdb
     restart: always
+    depends_on:
+      - influxdb
     environment:
       - INFLUXDB_ADDRESS
       - INFLUXDB_USER
