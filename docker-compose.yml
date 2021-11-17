@@ -44,6 +44,26 @@ services:
       - MQTT_USER=smarthouse-22rdk-29600
       - MQTT_PASS=NNSXS.GIXHBFWDXVGQMEQMJ7FTTUBEVC5LFYXI55SWPVI.V7AXSCYTGVIM5MTU6BZGRXHD6YWQ7VGFXK3BJCD2ZTOM5QDZ5SSQ
 
+  ttn-msgproc-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.msgproc
+    container_name: ttn-msgproc2
+    networks:
+      - backend
+    links:
+      - influxdb
+    restart: always
+    environment:
+      - INFLUXDB_ADDRESS
+      - INFLUXDB_USER
+      - INFLUXDB_PASSWORD
+      - TTN_TENANT
+      - MQTT_ADDRESS
+      - MQTT_PORT
+      - MQTT_USER=mynewt-app
+      - MQTT_PASS=NNSXS.7FENHURPB2TH7DPUGXNAHJWAQZTWRJVJLH7R6BQ.E3DEC2N4X4VN2A5TCGHFLCU4CATP73SOUWLMQTJNPQ7RS4YDKTBA
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
