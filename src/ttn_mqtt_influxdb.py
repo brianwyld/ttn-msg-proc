@@ -197,12 +197,11 @@ class TTNConnector:
             while(j<i+4+(lval*2)):
                 valval += payload[j:j+2]
                 j=j+2
-            log.info('tag ['+str(tval)+'] length ['+str(lval)+'] val ['+valval+']')
             i = i + 4 + (lval * 2)
 
             measurement = TLV(tval,lval,valval)
             measurement.compute()
-            measurement.print()
+            log.info('tag [%d] length [%d] val [%s] -> known key [%s]=[%s]',tval, lval, valval, measurement.decodedKey, str(measurement.decodedValue))
             returnedList.append(measurement)
         return returnedList
 
@@ -223,20 +222,19 @@ class TLV:
     def compute(self):
         if(self.key == 3):
             self.decodedKey = 'temperature'
-            temp = self.s16(int(self.invertValue(),16))
-            self.decodedValue = temp/100
+            self.decodedValue = TLV.s16(int(TLV.invertValue(self.value),16))/100
         elif(self.key == 4):
             self.decodedKey = 'pressure'
-            self.decodedValue = int(self.invertValue(),16)/100
+            self.decodedValue = int(TLV.invertValue(self.value),16)/100
         elif(self.key == 5):
             self.decodedKey = 'humidity'
-            self.decodedValue = int(self.invertValue(),16)/100
+            self.decodedValue = int(TLV.invertValue(self.value),16)/100
         elif(self.key == 6):
             self.decodedKey = 'light'
-            self.decodedValue = int(self.invertValue(),16)
+            self.decodedValue = int(TLV.invertValue(self.value),16)
         elif(self.key == 7):
             self.decodedKey = 'battery'
-            self.decodedValue = int(self.invertValue(), 16) / 1000
+            self.decodedValue = int(TLV.invertValue(self.value), 16) / 1000
         elif(self.key == 12):
             self.decodedKey = 'hasMoved'
             self.decodedValue = 1
@@ -248,15 +246,7 @@ class TLV:
             self.decodedValue = 1
         elif(self.key == 15):
             self.decodedKey = 'orient,x,y,z'
-            self.decodedValue = (s8(self.value[0:2]), s8(self.value[2:4]), s8(self.value[4:6]), s8(self.value[6:8]))
-
-    def invertValue(self):
-        i=len(self.value)
-        rtn = ""
-        while(i>0):
-            rtn += self.value[i-2:i]
-            i=i-2
-        return rtn
+            self.decodedValue = (TLV.s8(self.value[0:2]), TLV.s8(self.value[2:4]), TLV.s8(self.value[4:6]), TLV.s8(self.value[6:8]))
 
     def print(self):
         if(self.decodedKey != ''):
@@ -264,10 +254,21 @@ class TLV:
         else:
             print(str(self.key)+' not decoded')
 
-    def s16(self,value):
+    @staticmethod
+    def invertValue(value):
+        i=len(value)
+        rtn = []
+        while(i>0):
+            rtn.append(value[i-2:i])
+            i=i-2
+        return "".join(rtn)
+
+    @staticmethod
+    def s16(value):
         return -(value & 0x8000) | (value & 0x7fff)
 
-    def s8(self,hexb_str):
+    @staticmethod
+    def s8(hexb_str):
         value = int(hexb_str, 16)
         return -(value & 0x80) | (value & 0x7f)
 
