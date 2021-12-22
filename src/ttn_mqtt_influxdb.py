@@ -180,7 +180,6 @@ class TTNConnector:
             return []
         returnedList = []
         payloadLength = int(payload[2:4], 16)
-        log.info('  '+payload[2:4])
         log.info('payloadLength :'+str(payloadLength))
 
         i = 4

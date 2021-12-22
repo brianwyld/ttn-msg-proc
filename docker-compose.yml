@@ -68,6 +68,28 @@ services:
       - MQTT_USER=mynewt-app
       - MQTT_PASS=NNSXS.7FENHURPB2TH7DPUGXNAHJWAQZTWRJVJLH7R6BQ.E3DEC2N4X4VN2A5TCGHFLCU4CATP73SOUWLMQTJNPQ7RS4YDKTBA
 
+  ttn-msgproc-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.msgproc
+    container_name: ttn-msgproc3
+    networks:
+      - backend
+    links:
+      - influxdb
+    restart: always
+    depends_on:
+      - influxdb
+    environment:
+      - INFLUXDB_ADDRESS
+      - INFLUXDB_USER
+      - INFLUXDB_PASSWORD
+      - TTN_TENANT
+      - MQTT_ADDRESS
+      - MQTT_PORT
+      - MQTT_USER=infrafon-test
+      - MQTT_PASS=NNSXS.TTEKP2YTMODNSJ7UIKVZY7LO3WI73FPHIXFQUFA.I4FMVSB6NPGSUAAFSUK5NENRUCUGM5VLWFVM3CLKI4L7PYCLPJDA
+      
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
