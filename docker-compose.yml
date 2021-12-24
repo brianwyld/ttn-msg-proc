@@ -89,6 +89,7 @@ services:
       - MQTT_PORT
       - MQTT_USER=infrafon-test
       - MQTT_PASS=NNSXS.TTEKP2YTMODNSJ7UIKVZY7LO3WI73FPHIXFQUFA.I4FMVSB6NPGSUAAFSUK5NENRUCUGM5VLWFVM3CLKI4L7PYCLPJDA
+      - DECODER=infrafon
       
   grafana:
     image: grafana/grafana:latest

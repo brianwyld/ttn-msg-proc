@@ -33,6 +33,7 @@ class TTNConnector:
     def __init__(self, app:str, apikey:str):
         self._appname = app
         self._ttnusername = app+"@"+os.environ.get('TTN_TENANT', 'ttn')
+        self._decoder = os.environ.get('DECODER', 'app-generic')
         self._influxdb_client = None
         self._mqtt_client = None
         # can pass app as None to create test instance
@@ -80,23 +81,31 @@ class TTNConnector:
         # JOIN : log to lora activity DB
         # TODO
         datas = msg.get('uplink_message',{}).get('decoded_payload',None)
-        if datas is None:
+        # Note can get 'decoded' payload but its just the bytes decoded as an array, which is not useful
+        if datas is None or (len(datas)==1 and datas.get('bytes') is not None):
             # UL data: Wyres app-generic TLV format
-            #Payload decoding
+            #Payload decoding - convert to TLV list first
             tlvlist = TTNConnector.decoder(base64.b64decode(msg.get('uplink_message',{}).get('frm_payload','')).hex())
-            # convert and clean
+            # convert to known keys, and clean
             datas = {}
             for tlv in tlvlist:
-                if(tlv.decodedKey!=''):
-                    if ',' in tlv.decodedKey:
+                if self._decoder=='infrafon':
+                    decodedKey, decodedValue = TTNConnector.map_infrafon(tlv)
+                else:
+                    decodedKey, decodedValue = TTNConnector.map_app_generic(tlv)
+                log.info('tag [%d] length [%d] val [%s] -> known key [%s]=[%s]',tval, lval, valval, decodedKey, str(decodedValue))
+                if decodedKey is not None:
+                    if ',' in decodedKey:
                         # if key is of form a,b,c then value is tuple with same number of elements, split them into seperate data elements
-                        tlvks = tlv.decodedKey.split(',')
+                        tlvks = decodedKey.split(',')
                         idx = 0
                         for tlvk in tlvks:
-                            datas[tlvk] = tlv.decodedValue[idx]
+                            datas[tlvk] = decodedValue[idx]
                             idx += 1
                     else:
-                        datas[tlv.decodedKey] = tlv.decodedValue
+                        datas[decodedKey] = decodedValue
+                else:
+                    datas[tlv.key] = tlv.value
 
         for dk, dv in datas.items():
             # we only put numbers in our DB
@@ -204,54 +213,57 @@ class TTNConnector:
             returnedList.append(measurement)
         return returnedList
 
+    @staticmethod
+    def map_app_generic(tlv)->tuple:
+        if(tlv.key == 3):
+            return ('temperature', TLV.s16(int(TLV.invertValue(tlv.value),16))/100)
+        elif(tlv.key == 4):
+            return ('pressure', int(TLV.invertValue(tlv.value),16)/100)
+        elif(tlv.key == 5):
+            return ('humidity', int(TLV.invertValue(tlv.value),16)/100)
+        elif(tlv.key == 6):
+            return ('light', int(TLV.invertValue(tlv.value),16))
+        elif(tlv.key == 7):
+            return ('battery', int(TLV.invertValue(tlv.value), 16) / 1000)
+        elif(tlv.key == 12):
+            return ('hasMoved', 1)
+        elif(tlv.key == 13):
+            return ('hasFall', 1)
+        elif(tlv.key == 14):
+            return ('hasShock', 1)
+        elif(tlv.key == 15):
+            return ('orient,x,y,z', (TLV.s8(tlv.value[0:2]), TLV.s8(tlv.value[2:4]), TLV.s8(tlv.value[4:6]), TLV.s8(tlv.value[6:8])))
+        return (None, None)
 
+    @staticmethod
+    def map_infrafon(tlv)->tuple:
+        if(self.tlv == 16):
+            return ('temperature', TLV.s16(int(TLV.invertValue(tlv.value),16))/100)
+        elif(self.tlv == 15):
+            return ('pressure', int(TLV.invertValue(tlv.value),16)/100)
+        elif(self.tlv == 0):
+            return ('status', int(TLV.invertValue(tlv.value),16))
+        elif(self.tlv == 17):
+            return ('charging', (int(TLV.invertValue(tlv.value),16)!=0))
+        elif(self.tlv == 18):
+            return ('batt_gauge', int(TLV.invertValue(tlv.value),16))
+        elif(self.tlv == 19):
+            return ('battery', int(TLV.invertValue(tlv.value), 16) / 1000)
+        elif(self.tlv == 20):
+            return ('orient', int(TLV.invertValue(tlv.value),16))     # actually a 2 letter string
+        return (None, None)
 
 class TLV:
     key: int
     length: int
     value: str
-    decodedKey : str
-    decodedValue : str
     def __init__(self, key,length, value):
         self.key = key
         self.length = length
         self.value = value
-        self.decodedKey = ''
-        self.decodedValue = -1
-    def compute(self):
-        if(self.key == 3):
-            self.decodedKey = 'temperature'
-            self.decodedValue = TLV.s16(int(TLV.invertValue(self.value),16))/100
-        elif(self.key == 4):
-            self.decodedKey = 'pressure'
-            self.decodedValue = int(TLV.invertValue(self.value),16)/100
-        elif(self.key == 5):
-            self.decodedKey = 'humidity'
-            self.decodedValue = int(TLV.invertValue(self.value),16)/100
-        elif(self.key == 6):
-            self.decodedKey = 'light'
-            self.decodedValue = int(TLV.invertValue(self.value),16)
-        elif(self.key == 7):
-            self.decodedKey = 'battery'
-            self.decodedValue = int(TLV.invertValue(self.value), 16) / 1000
-        elif(self.key == 12):
-            self.decodedKey = 'hasMoved'
-            self.decodedValue = 1
-        elif(self.key == 13):
-            self.decodedKey = 'hasFall'
-            self.decodedValue = 1
-        elif(self.key == 14):
-            self.decodedKey = 'hasShock'
-            self.decodedValue = 1
-        elif(self.key == 15):
-            self.decodedKey = 'orient,x,y,z'
-            self.decodedValue = (TLV.s8(self.value[0:2]), TLV.s8(self.value[2:4]), TLV.s8(self.value[4:6]), TLV.s8(self.value[6:8]))
 
     def print(self):
-        if(self.decodedKey != ''):
-            print(self.decodedKey+': '+str(self.decodedValue))
-        else:
-            print(str(self.key)+' not decoded')
+        print(str(self.key)+' not decoded')
 
     @staticmethod
     def invertValue(value):
