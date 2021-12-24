@@ -244,9 +244,9 @@ class TTNConnector:
         elif(tlv.key == 17):
             return ('charging', (int(TLV.invertValue(tlv.value),16)!=0))
         elif(tlv.key == 18):
-            return ('batt_gauge', int(TLV.invertValue(tlv.value),16))
+            return ('batt_gauge', int(TLV.invertValue(tlv.value),16)/100)
         elif(tlv.key == 19):
-            return ('battery', int(TLV.invertValue(tlv.value), 16) / 1000)
+            return ('battery', int(TLV.invertValue(tlv.value), 16)/100)
         elif(tlv.key == 20):
             return ('orient', int(TLV.invertValue(tlv.value),16))     # actually a 2 letter string
         return (None, None)
