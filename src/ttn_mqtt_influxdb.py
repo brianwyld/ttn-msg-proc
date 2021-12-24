@@ -93,7 +93,7 @@ class TTNConnector:
                     decodedKey, decodedValue = TTNConnector.map_infrafon(tlv)
                 else:
                     decodedKey, decodedValue = TTNConnector.map_app_generic(tlv)
-                log.info('tag [%d] length [%d] val [%s] -> known key [%s]=[%s]',tval, lval, valval, decodedKey, str(decodedValue))
+                log.info('tag [%d] val [%s] -> known key [%s]=[%s]',tlv.key, tlv.value, decodedKey, str(decodedValue))
                 if decodedKey is not None:
                     if ',' in decodedKey:
                         # if key is of form a,b,c then value is tuple with same number of elements, split them into seperate data elements
@@ -208,8 +208,6 @@ class TTNConnector:
             i = i + 4 + (lval * 2)
 
             measurement = TLV(tval,lval,valval)
-            measurement.compute()
-            log.info('tag [%d] length [%d] val [%s] -> known key [%s]=[%s]',tval, lval, valval, measurement.decodedKey, str(measurement.decodedValue))
             returnedList.append(measurement)
         return returnedList
 
