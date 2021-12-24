@@ -235,19 +235,19 @@ class TTNConnector:
 
     @staticmethod
     def map_infrafon(tlv)->tuple:
-        if(self.tlv == 16):
+        if(tlv.key == 16):
             return ('temperature', TLV.s16(int(TLV.invertValue(tlv.value),16))/100)
-        elif(self.tlv == 15):
+        elif(tlv.key == 15):
             return ('pressure', int(TLV.invertValue(tlv.value),16)/100)
-        elif(self.tlv == 0):
+        elif(tlv.key == 0):
             return ('status', int(TLV.invertValue(tlv.value),16))
-        elif(self.tlv == 17):
+        elif(tlv.key == 17):
             return ('charging', (int(TLV.invertValue(tlv.value),16)!=0))
-        elif(self.tlv == 18):
+        elif(tlv.key == 18):
             return ('batt_gauge', int(TLV.invertValue(tlv.value),16))
-        elif(self.tlv == 19):
+        elif(tlv.key == 19):
             return ('battery', int(TLV.invertValue(tlv.value), 16) / 1000)
-        elif(self.tlv == 20):
+        elif(tlv.key == 20):
             return ('orient', int(TLV.invertValue(tlv.value),16))     # actually a 2 letter string
         return (None, None)
 
