@@ -241,7 +241,7 @@ class TTNConnector:
             else:
                 pitch=math.degrees(math.acos(y/math.hypot(x,y)))
             # calculate cos of pitch to integrate in yaw calculation
-            cosp = math.cos(radians(pitch))
+            cosp = math.cos(math.radians(pitch))
             # avoid div0
             if z==0 and y==0 or cosp==0:
                 yaw=0
