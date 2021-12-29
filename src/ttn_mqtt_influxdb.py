@@ -16,6 +16,7 @@ import time
 import base64
 import sys
 import os
+import math
 
 import logging
 log=logging.getLogger(__name__)
@@ -230,7 +231,25 @@ class TTNConnector:
         elif(tlv.key == 14):
             return ('hasShock', 1)
         elif(tlv.key == 15):
-            return ('orient,x,y,z', (TLV.s8(tlv.value[0:2]), TLV.s8(tlv.value[2:4]), TLV.s8(tlv.value[4:6]), TLV.s8(tlv.value[6:8])))
+            x=TLV.s8(tlv.value[2:4])
+            y=TLV.s8(tlv.value[4:6])
+            z=TLV.s8(tlv.value[6:8])
+            # calculation of pitch and yaw in 3D  (note assumes 0deg is box vertical)
+            # avoid div0
+            if x==0 and y==0:
+                pitch=0
+            else:
+                pitch=math.degrees(math.acos(y/math.hypot(x,y)))
+            # calculate cos of pitch to integrate in yaw calculation
+            cosp = math.cos(radians(pitch))
+            # avoid div0
+            if z==0 and y==0 or cosp==0:
+                yaw=0
+            else:
+                yaw=math.degrees(math.acos(y/(cosp*math.hypot(z,y)))
+            # river depth calculations - angle of box, water depth for a unit length bar hinged on xy axis(scale as required)
+            rd=math.sin(math.radians(90-((180-pitch)/2)))
+            return ('orient,x,y,z,pitch,yaw,rdepth', (TLV.s8(tlv.value[0:2]), x,y,z,pitch,yaw,rd))
         return (None, None)
 
     @staticmethod
