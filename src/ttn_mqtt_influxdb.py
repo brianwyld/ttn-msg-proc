@@ -235,20 +235,24 @@ class TTNConnector:
             y=TLV.s8(tlv.value[4:6])
             z=TLV.s8(tlv.value[6:8])
             # calculation of pitch and yaw in 3D  (note assumes 0deg is box vertical)
-            # avoid div0
-            if x==0 and y==0:
-                pitch=0
-            else:
+            try:
                 pitch=math.degrees(math.acos(y/math.hypot(x,y)))
+            except Exception as err:
+                log.info("math err %s for pitch (%d, %d)", err, x, y)
+                pitch=0
             # calculate cos of pitch to integrate in yaw calculation
-            cosp = math.cos(math.radians(pitch))
-            # avoid div0
-            if z==0 and y==0 or cosp==0:
-                yaw=0
-            else:
+            try:
+                cosp = math.cos(math.radians(pitch))
                 yaw=math.degrees(math.acos(y/(cosp*math.hypot(z,y))))
+            except Exception as err:
+                log.info("math err %s for yaw (%d, %d, %d)", err, cosp, z, y)
+                yaw=0
             # river depth calculations - angle of box, water depth for a unit length bar hinged on xy axis(scale as required)
-            rd=math.sin(math.radians(90-((180-pitch)/2)))
+            try:
+                rd=math.sin(math.radians(90-((180-pitch)/2)))
+            except Exception as err:
+                log.info("math err %s for depth (%d)", err, pitch)
+                rd=0
             return ('orient,x,y,z,pitch,yaw,rdepth', (TLV.s8(tlv.value[0:2]), x,y,z,pitch,yaw,rd))
         return (None, None)
 
