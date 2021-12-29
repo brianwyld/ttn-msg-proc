@@ -246,7 +246,7 @@ class TTNConnector:
             if z==0 and y==0 or cosp==0:
                 yaw=0
             else:
-                yaw=math.degrees(math.acos(y/(cosp*math.hypot(z,y)))
+                yaw=math.degrees(math.acos(y/(cosp*math.hypot(z,y))))
             # river depth calculations - angle of box, water depth for a unit length bar hinged on xy axis(scale as required)
             rd=math.sin(math.radians(90-((180-pitch)/2)))
             return ('orient,x,y,z,pitch,yaw,rdepth', (TLV.s8(tlv.value[0:2]), x,y,z,pitch,yaw,rd))
