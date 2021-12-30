@@ -250,8 +250,9 @@ class TTNConnector:
                 log.info("math err %s for yaw (%d, %d, %d)", err, pitch, z, y)
                 yaw=0
             # river depth calculations - angle of box, water depth for a unit length bar hinged on xy axis(scale as required)
+            # for diagram of the triangles involved see a whiteboard near you
             try:
-                rd=math.sin(math.radians(90-((180-pitch)/2)))
+                rd=(2*math.sin(math.radians(pitch/2)))*math.sin(math.radians(90-((180-pitch)/2)))
             except Exception as err:
                 log.info("math err %s for depth (%d)", err, pitch)
                 rd=0
