@@ -241,9 +241,11 @@ class TTNConnector:
                 log.info("math err %s for pitch (%d, %d)", err, x, y)
                 pitch=0
             # calculate cos of pitch to integrate in yaw calculation
+            # TODO not sure how, stackoverflow says do acos(y/cos(pitch)*hypot(z,y)) but this ends up with acos(value>1) which is math error....
             try:
                 cosp = math.cos(math.radians(pitch))
-                yaw=math.degrees(math.acos(cosp*(y/math.hypot(z,y))))
+                # ignore pitch for now
+                yaw=math.degrees(math.acos(y/math.hypot(z,y)))
             except Exception as err:
                 log.info("math err %s for yaw (%d, %d, %d)", err, pitch, z, y)
                 yaw=0
