@@ -69,18 +69,16 @@ class TTNConnector:
 
     def _parse_mqtt_message_ttn(self, topic, mqtt_data):
         msg = json.loads(mqtt_data)
-        log.info("Incoming from topic %s msg %s",topic, msg)
 
-        devEui = msg.get('end_device_ids', {}).get('device_id', 'UNKNOWN')
+        dev_name = msg.get('end_device_ids', {}).get('device_id', 'UNKNOWN')
+        dev_eui = msg.get('end_device_ids', {}).get('dev_eui', 'UNKNOWN')
+        log.info("Incoming from topic %s device name %s dev_eui %s msg %s",topic, dev_name, dev_eui, msg)
 
-        self._send_sensor_data_to_influxdb(devEui, 'ulFrequency', float(msg.get('uplink_message', {}).get('settings',{}).get('frequency',0)))
-        self._send_sensor_data_to_influxdb(devEui, 'ulSF', TTNConnector.mapDR2SF(msg.get('uplink_message', {}).get('settings',{}).get('data_rate_index',0)))
-        self._send_sensor_data_to_influxdb(devEui, 'rssi', float(TTNConnector.getMaxRSSI(msg.get('uplink_message', {}).get('rx_metadata', []))))
-        self._send_sensor_data_to_influxdb(devEui, 'nbGateways', float(len(msg.get('uplink_message', {}).get('rx_metadata', []))))
+        self._send_sensor_data_to_influxdb(dev_name, 'ulFrequency', float(msg.get('uplink_message', {}).get('settings',{}).get('frequency',0)))
+        self._send_sensor_data_to_influxdb(dev_name, 'ulSF', TTNConnector.mapDR2SF(msg.get('uplink_message', {}).get('settings',{}).get('data_rate_index',0)))
+        self._send_sensor_data_to_influxdb(dev_name, 'rssi', float(TTNConnector.getMaxRSSI(msg.get('uplink_message', {}).get('rx_metadata', []))))
+        self._send_sensor_data_to_influxdb(dev_name, 'nbGateways', float(len(msg.get('uplink_message', {}).get('rx_metadata', []))))
 
-        # depending on type of message:
-        # JOIN : log to lora activity DB
-        # TODO
         datas = msg.get('uplink_message',{}).get('decoded_payload',None)
         # Note can get 'decoded' payload but its just the bytes decoded as an array, which is not useful
         if datas is None or (len(datas)==1 and datas.get('bytes') is not None):
@@ -111,7 +109,7 @@ class TTNConnector:
         for dk, dv in datas.items():
             # we only put numbers in our DB
             if isinstance(dv, float) or isinstance(dv, int):
-                self._send_sensor_data_to_influxdb(devEui,dk,float(dv))
+                self._send_sensor_data_to_influxdb(dev_name, dk, float(dv))
             else:
                 log.info("ignoring non number value %s=%s", dk, dv)
 
@@ -122,18 +120,38 @@ class TTNConnector:
             self._mqtt_client = None
             return
         # we want uplink messages
-        topic = "v3/{}/devices/+/up".format(self._ttnusername)
+        topic = "v3/{}/devices/#".format(self._ttnusername)
         log.info('Connected OK - subscribing to topic %s', topic)
         client.subscribe(topic)
 
 
-    def on_message(self, client, userdata, msg):
+    def on_message(self, client, userdata, mqtt_msg):
         """The callback for when a PUBLISH message is received from the server."""
         try:
-            self._parse_mqtt_message_ttn(msg.topic, msg.payload)
-        except Exception:
-            log.exception("parsing message on %s", msg.topic)
-
+            # mqtt RX on any TTN topic : check end of topic to see what it is
+            tls = mqtt_msg.topic.split('/')
+            topic = tls[-1]
+            if topic=="up":
+                # v3/{application id}@{tenant id}/devices/{device id}/up
+                logging.info('UL from %s', tls[-2:-1])
+                self._parse_mqtt_message_ttn(mqtt_msg.topic, mqtt_msg.payload)
+            elif topic=="join":
+                # v3/{application id}@{tenant id}/devices/{device id}/join
+                # log to db? TODO
+                logging.info('Join from %s', tls[-2:-1])
+            elif topic in ["queued","sent","ack", "nack", "failed"]:
+                # v3/{application id}@{tenant id}/devices/{device id}/down/queued
+                # v3/{application id}@{tenant id}/devices/{device id}/down/sent
+                # v3/{application id}@{tenant id}/devices/{device id}/down/ack
+                # v3/{application id}@{tenant id}/devices/{device id}/down/nack
+                # v3/{application id}@{tenant id}/devices/{device id}/down/failed
+                logging.info('DL status %s for %s', topic, tls[-3:-2])
+            else:
+                # v3/{application id}@{tenant id}/devices/{device id}/service/data
+                # v3/{application id}@{tenant id}/devices/{device id}/location/solved
+                logging.info('ignored rx mqtt from topic %s', topic)
+        except Exception as err:
+            logging.warning("Failed to process rx mqtt msg %s exception %s", mqtt_msg, err)
 
     def _send_sensor_data_to_influxdb(self, deveui,measurementKey,value):
         json_body = [
